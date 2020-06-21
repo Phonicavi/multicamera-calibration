@@ -90,9 +90,9 @@ def write_ba_solution(input_path, cameras, intrinsic, extrinsic):
                     cmat[2,2] = 1
                     icam += 1
                     ipath = intrinsic[0] + camera + intrinsic[1]
-                    print ipath
+                    print(ipath)
                     epath = extrinsic[0] + camera + extrinsic[1]
-                    print epath
+                    print(epath)
                     with open(ipath, 'w') as ifile:
                         json.dump({'intrinsic':cmat.tolist(),
                                    'distortion_coefficients':dist.tolist()},

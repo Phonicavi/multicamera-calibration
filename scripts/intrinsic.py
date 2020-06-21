@@ -46,8 +46,8 @@ def parse():
     """
     parser = ArgumentParser()
     parser.add_argument('-n', '--num', default=20, type=int, help='number to subsample')
-    parser.add_argument('-W', '--width', default=4, help='board width')
-    parser.add_argument('-H', '--height', default=11, help='board height')
+    parser.add_argument('-W', '--width', default=8, type=int, help='board width')
+    parser.add_argument('-H', '--height', default=11, type=int, help='board height')
     parser.add_argument('-p', '--pattern', choices=['chessboard', 'circles', 'asymmetric_circles'],
                         default='asymmetric_circles', help='pattern to discover')
     parser.add_argument('-o', '--full_output', help='output folder for all images')
@@ -109,7 +109,7 @@ def select_images(image_points, number_to_select):
         imranks.append(imrank)
         minranks = {i:len(image_points) for i in range(len(image_points)) if i not in imlist}
         for imrank in imranks:
-            for idx, rank in minranks.iteritems():
+            for idx, rank in minranks.items():
                 if imrank[idx] < rank:
                     minranks[idx] = imrank[idx]
         max_min_idx = max(minranks, key=minranks.get)
@@ -119,6 +119,14 @@ def select_images(image_points, number_to_select):
 def main():
     opts = parse()
     images, image_points = filter_images(opts.input, opts.pattern, opts.width, opts.height)
+
+    print(len(images))
+    for fn in images:
+        print(fn)
+    print(len(image_points))
+    for pts in image_points:
+        print(pts.shape)
+
     if opts.full_output is not None:
         for image in images:
             copy(image, path.join(opts.full_output, path.basename(image)))
@@ -138,9 +146,9 @@ def main():
     opoints = [object_points for _ in range(len(selected_indices))]
     ipoints = [image_points[idx] for idx in selected_indices]
     image_resolution = cv2.imread(images[0]).shape[:-1][::-1]
-    print image_resolution
+    print(image_resolution)
     _, cam_matrix, distortion, rotation_vectors, translation_vectors = \
-            cv2.calibrateCamera(opoints, ipoints, image_resolution)
+            cv2.calibrateCamera(opoints, ipoints, image_resolution, None, None)
 #save calibration
     with open(opts.output, 'w') as out_file:
         json.dump({'intrinsic':cam_matrix.tolist(),
@@ -148,12 +156,12 @@ def main():
                   out_file)
 # compute retroprojection error
     tot_error = 0
-    for i in xrange(len(opoints)):
+    for i in range(len(opoints)):
         ipoints2, _ = cv2.projectPoints(opoints[i], rotation_vectors[i], translation_vectors[i],
                                           cam_matrix, distortion)
         error = cv2.norm(ipoints[i],ipoints2, cv2.NORM_L2)/len(ipoints2)
         tot_error += error
-    print "total error :", tot_error, "mean error :", tot_error/len(opoints)
+    print("total error :", tot_error, "mean error :", tot_error/len(opoints))
 #show results
     pos = 0
     key = None
@@ -162,7 +170,7 @@ def main():
         image = cv2.imread(images[pos])
         undistorted = cv2.undistort(image, cam_matrix, distortion, None)
         cv2.imshow('img', undistorted)
-        print 'next (n), previous (p) or quit (q)'
+        print('next (n), previous (p) or quit (q)')
         while key not in [ord('q'), ord('n'), ord('p')]:
             key = cv2.waitKey(10)
         pos = ((pos + 1) % len(selected_indices)) \

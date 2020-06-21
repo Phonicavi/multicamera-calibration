@@ -98,7 +98,7 @@ def build_observations(annotations, camera_matrix, distortion_coefficients):
     for annotation_path in iglob(annotations):
         frame = path.basename(annotation_path).split('.')[0]
         annotation_data = read_annotation(annotation_path)
-        for subject_id, values in annotation_data.iteritems():
+        for subject_id, values in annotation_data.items():
             pid = frame+subject_id
             tmp_obs_id.append(pid)
             tmp_obs_value.append(values[0])
@@ -170,7 +170,7 @@ def get_3d_head_from_foot(projection, u_v, foot3d):
 
 def build_3d_points(observations, camera_matrices, projection_matrices, outliers=None):
     points = {}
-    for pid, obs in observations.iteritems():
+    for pid, obs in observations.items():
         feet = []
         heads = []
         cam_matrices_f = []
@@ -180,7 +180,7 @@ def build_3d_points(observations, camera_matrices, projection_matrices, outliers
         obspoint = [feet, heads]
         cam_matrix = [cam_matrices_f, cam_matrices_h]
         projections = [projections_f, projections_h]
-        for camera, pts in obs.iteritems():   
+        for camera, pts in obs.items():   
             outlier = None if outliers is None else outliers.get(pid)
             filterlist = None if outlier is None else outlier.get(camera)
             for i, pt in enumerate(pts):
@@ -195,7 +195,7 @@ def build_3d_points(observations, camera_matrices, projection_matrices, outliers
         head3d = None
         foot3d = None
         if len(feet) == 1:
-            print "point " + pid[:-1] + " only in one camera : " + camera
+            print("point " + pid[:-1] + " only in one camera : " + camera)
             foot3d = get_3d_foot(projection_f, u_v_f)
             if len(heads) == 1:
                 head3d = get_3d_head_from_foot(projection_h, u_v_h, foot3d)
@@ -215,7 +215,7 @@ def check_reprojection_error(cameras, calibrations, observations, points):
         impoints = []
         objpoints = []
         pids = []
-        for pid, point in points.iteritems():
+        for pid, point in points.items():
             impoint = observations[pid].get(camera)
             if impoint is not None:
                 for i, (ipt, opt) in enumerate(zip(impoint, point)):
@@ -238,21 +238,21 @@ def check_reprojection_error(cameras, calibrations, observations, points):
             for index in indices:
                 outliers.append(pids[index])
                 fltr[pids[index][0]][camera].append(pids[index][1])
-            print camera + " mean reprojection error : ", mean_reprojection_error, 
-            print "median :", np.median(euclidean_dist),
+            print(camera + " mean reprojection error : ", mean_reprojection_error, end=' ') 
+            print("median :", np.median(euclidean_dist), end=' ')
             mask = np.ones(euclidean_dist.shape).astype(np.bool)
             mask[indices] = False
-            print "filtered mean :", np.mean(euclidean_dist[mask]),
-            print "filtered median :", np.median(euclidean_dist[mask])
+            print("filtered mean :", np.mean(euclidean_dist[mask]), end=' ')
+            print("filtered median :", np.median(euclidean_dist[mask]))
         else:
-            print camera, ' empty'
-    print "overall mean reprojection error :", np.mean(total_diffs), "median :", np.median(total_diffs)
+            print(camera, ' empty')
+    print("overall mean reprojection error :", np.mean(total_diffs), "median :", np.median(total_diffs))
     return fltr
 
 def filter_data(observations, outliers):
     new_obs = defaultdict(dict)
-    for pid, obs in observations.iteritems():
-        for camera, pts in obs.iteritems():   
+    for pid, obs in observations.items():
+        for camera, pts in obs.items():   
             outlier = None if outliers is None else outliers.get(pid)
             filterlist = None if outlier is None else outlier.get(camera)
             foot = None
@@ -290,7 +290,7 @@ def read_observations(cameras, calibrations, annotations):
         tmp_observations, tmp_undistorted_observations = \
                 build_observations(annotations_path, calibrations[camera]['cam_matrix'],
                                    calibrations[camera]['distortion_coefficients'])
-        for pid, value in tmp_observations.iteritems():
+        for pid, value in tmp_observations.items():
             observations[pid][camera] = value
             undistorted_observations[pid][camera] = tmp_undistorted_observations[pid]
     return observations, undistorted_observations
@@ -299,9 +299,9 @@ def read_data(cameras, intrinsic, extrinsic, annotations, fixed_points_pattern):
     fixed_points = read_fixed_points(cameras, fixed_points_pattern)
     calibrations = read_calibration(cameras, intrinsic, extrinsic)
     observations, undistorted_observations = read_observations(cameras, calibrations, annotations)
-    camera_matrices = {camera: value['cam_matrix'] for camera, value in calibrations.iteritems()}
+    camera_matrices = {camera: value['cam_matrix'] for camera, value in calibrations.items()}
     projection_matrices = {camera: projection_matrix(value['rvec'], value['tvec'])
-                           for camera, value in calibrations.iteritems()}
+                           for camera, value in calibrations.items()}
     points = build_3d_points(undistorted_observations, camera_matrices, projection_matrices)
     outliers = check_reprojection_error(cameras, calibrations, observations, points)
     observations = filter_data(observations, outliers)
@@ -311,14 +311,14 @@ def read_data(cameras, intrinsic, extrinsic, annotations, fixed_points_pattern):
     return calibrations, observations, points, fixed_points
 
 def write_ba_problem(cameras, observations, calibrations, points, fixed_points, output_path):
-    pids = [(key, i) for key, value in points.iteritems()
+    pids = [(key, i) for key, value in points.items()
             for i, val in enumerate(value)
             if val is not None]
-    fpids = fixed_points.keys()
+    fpids = list(fixed_points.keys())
     n_obs = sum(1 for key, idx in pids
-                for value in observations[key].itervalues()
+                for value in observations[key].values()
                 if value[idx] is not None)
-    n_fobs = sum(1 for projs in fixed_points.itervalues() for proj in projs.itervalues())
+    n_fobs = sum(1 for projs in fixed_points.values() for proj in projs.values())
     with open(output_path, 'w') as output:
         output.write("{} {} {} {} {}\n".format(len(cameras), len(pids), len(fpids), n_obs, n_fobs))
         for i_cam, camera in enumerate(cameras):

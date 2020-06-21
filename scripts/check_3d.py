@@ -45,13 +45,13 @@ class CalibrationInterface(object):
         self.wname = '3D projection'
         self.calibrations = calibrations
         self.camera_matrices = {camera: value['cam_matrix']
-                                for camera, value in calibrations.iteritems()}
+                                for camera, value in calibrations.items()}
         self.distortion_coefficients = {camera: value['distortion_coefficients']
-                                        for camera, value in calibrations.iteritems()}
+                                        for camera, value in calibrations.items()}
         self.projection_matrices = {camera: self.projection_matrix(value['rvec'], value['tvec'])
-                                    for camera, value in calibrations.iteritems()}
+                                    for camera, value in calibrations.items()}
         self.images = images
-        self.cameras = images.keys()
+        self.cameras = list(images.keys())
         self.camera = 0
         self.image_points = {}
         self.undistorted_points = {}
@@ -115,7 +115,7 @@ class CalibrationInterface(object):
         projections = []
         obspoint = []
         if len(self.undistorted_points) >= 2:
-            for camera, point in self.undistorted_points.iteritems():
+            for camera, point in self.undistorted_points.items():
                 obspoint.append(point)
                 cam_matrices.append(self.camera_matrices[camera])
                 projections.append(self.projection_matrices[camera])
